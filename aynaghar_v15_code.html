@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aynaghar: Days of Silence (v12.0)</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    html, body {
+      width: 100%;
+      height: 100%;
+      background-color: #030305;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* Dynamic Atmospheric Liquid Background Canvas */
+    #bg-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.75;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+      position: relative;
+      z-index: 1;
+      transition: background-color 0.8s ease;
+    }
+
+    /* Widescreen Responsive Glassmorphism Container */
+    #game-card {
+      background: rgba(10, 12, 18, 0.85);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border: 1px solid rgba(220, 38, 38, 0.3);
+      border-radius: 20px;
+      max-width: 1100px;
+      width: 94vw;
+      padding: 36px;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.95), 0 0 40px rgba(220, 38, 38, 0.1);
+      position: relative;
+      transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+      overflow: hidden;
+    }
+
+    /* Stage Theme Variations */
+    .theme-dark { background: rgba(8, 8, 12, 0.88) !important; border-color: rgba(153, 27, 27, 0.35) !important; }
+    .theme-interrogation { background: rgba(10, 16, 28, 0.9) !important; border-color: rgba(56, 189, 248, 0.4) !important; box-shadow: 0 30px 80px rgba(0,0,0,0.95), 0 0 40px rgba(56, 189, 248, 0.12) !important; }
+    .theme-court { background: rgba(18, 18, 26, 0.9) !important; border-color: rgba(217, 119, 6, 0.4) !important; }
+    .theme-prison { background: rgba(17, 13, 22, 0.9) !important; border-color: rgba(168, 85, 247, 0.4) !important; }
+    .theme-epilogue { background: rgba(6, 20, 14, 0.9) !important; border-color: rgba(16, 185, 129, 0.4) !important; }
+
+    header {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 18px;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    h1 {
+      font-size: 1.35rem;
+      color: #f3f4f6;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      font-weight: 800;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+    }
+
+    .audio-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .audio-toggle-btn {
+      background: rgba(30, 30, 45, 0.85);
+      border: 1px solid rgba(245, 158, 11, 0.5);
+      color: #fbbf24;
+      font-size: 0.8rem;
+      padding: 7px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.25s ease;
+      backdrop-filter: blur(6px);
+    }
+
+    .audio-toggle-btn:hover {
+      background: rgba(245, 158, 11, 0.25);
+      border-color: #f59e0b;
+      box-shadow: 0 0 16px rgba(245, 158, 11, 0.4);
+    }
+
+    /* Screen Transitions with Subtle Scale & Motion */
+    .screen {
+      opacity: 0;
+      transition: opacity 0.45s ease-in-out, transform 0.45s ease-in-out;
+      transform: translateY(12px) scale(0.985);
+      display: none;
+      width: 100%;
+    }
+
+    .screen.active {
+      display: block;
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    /* Status Bar Metrics */
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      background: rgba(15, 15, 25, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 14px 22px;
+      border-radius: 12px;
+      margin-bottom: 24px;
+      gap: 16px;
+    }
+
+    .metric { width: 31%; }
+    .metric-label { font-size: 0.72rem; text-transform: uppercase; color: #9ca3af; letter-spacing: 1px; font-weight: 700; }
+    .metric-value { font-weight: 800; font-size: 1.15rem; color: #f3f4f6; margin-top: 2px; }
+    .bar-container { width: 100%; height: 6px; background-color: rgba(255, 255, 255, 0.12); border-radius: 4px; overflow: hidden; margin-top: 6px; }
+    .bar-fill { height: 100%; transition: width 0.4s ease; }
+    #sanity-fill { background-color: #3b82f6; width: 100%; }
+    #health-fill { background-color: #dc2626; width: 100%; }
+
+    /* Scene Viewport Container */
+    .scene-viewport {
+      background: rgba(0, 0, 0, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 14px;
+      padding: 30px;
+      min-height: 240px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      margin-bottom: 24px;
+      width: 100%;
+      position: relative;
+      overflow: hidden;
+      overflow-wrap: break-word;
+      word-wrap: break-word;
+      word-break: break-word;
+    }
+
+    .scene-title { 
+      font-size: 1.35rem; 
+      color: #ef4444; 
+      font-weight: 800; 
+      margin-bottom: 14px; 
+      letter-spacing: 0.6px; 
+      line-height: 1.4;
+    }
+
+    .scene-text { 
+      font-size: 1.05rem; 
+      line-height: 1.8; 
+      color: #e5e7eb; 
+      margin-bottom: 14px; 
+      overflow-wrap: break-word;
+    }
+
+    .scene-text:last-child { margin-bottom: 0; }
+
+    .typewriter-text { 
+      font-size: 1.05rem; 
+      line-height: 1.85; 
+      color: #e5e7eb; 
+      white-space: pre-wrap; 
+      overflow-wrap: break-word;
+      word-break: break-word;
+      width: 100%;
+      display: inline;
+    }
+
+    /* Same-Color Blinking Text Cursor */
+    #typewriter-cursor {
+      color: #e5e7eb;
+      font-weight: 700;
+      font-family: inherit;
+      display: inline-block;
+      margin-left: 2px;
+      user-select: none;
+    }
+
+    .cursor-blinking {
+      animation: blinkCursor 0.9s step-start infinite;
+    }
+
+    .cursor-solid {
+      animation: none !important;
+      opacity: 1 !important;
+    }
+
+    @keyframes blinkCursor {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+    
+    .survivor-quote { 
+      font-style: italic; 
+      border-left: 4px solid #ef4444; 
+      margin: 18px 0; 
+      color: #fca5a5; 
+      font-size: 0.96rem; 
+      line-height: 1.65;
+      background: rgba(239, 68, 68, 0.08);
+      border-radius: 0 8px 8px 0;
+      padding: 12px 18px;
+    }
+
+    /* Role Briefing Grid */
+    .role-card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin: 18px 0;
+    }
+
+    .role-card {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 12px;
+      padding: 18px;
+    }
+
+    .role-card h4 {
+      font-size: 0.95rem;
+      color: #38bdf8;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    .role-card p {
+      font-size: 0.88rem;
+      color: #cbd5e1;
+      line-height: 1.55;
+    }
+
+    /* Action Alert Box */
+    .alert-box {
+      background-color: rgba(153, 27, 27, 0.25);
+      border: 1px solid #991b1b;
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-top: 14px;
+      font-size: 0.92rem;
+      color: #fca5a5;
+      display: none;
+      line-height: 1.55;
+    }
+
+    /* Buttons (Liquid Glass Style) */
+    .button-group { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+    
+    .action-btn {
+      background: rgba(18, 20, 30, 0.85);
+      color: #f3f4f6;
+      border: 1px solid rgba(220, 38, 38, 0.3);
+      padding: 16px 22px;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+      text-align: left;
+      line-height: 1.45;
+      width: 100%;
+      box-sizing: border-box;
+      backdrop-filter: blur(6px);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .action-btn:hover:not(:disabled) {
+      background: rgba(220, 38, 38, 0.2);
+      border-color: #ef4444;
+      color: #ffffff;
+      transform: translateX(6px);
+      box-shadow: 0 6px 20px rgba(220, 38, 38, 0.3);
+    }
+
+    .action-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+      text-decoration: line-through;
+      border-color: rgba(255, 255, 255, 0.08);
+      transform: none !important;
+    }
+
+    .action-btn.next-btn {
+      justify-content: center;
+      text-align: center;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .interview-block {
+      background: rgba(10, 10, 16, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-top: 14px;
+      overflow-wrap: break-word;
+    }
+    .interview-label { font-size: 0.72rem; text-transform: uppercase; color: #f59e0b; font-weight: bold; margin-bottom: 4px; letter-spacing: 0.5px; }
+    .interview-text { font-size: 0.88rem; color: #9ca3af; line-height: 1.5; }
+  </style>
+</head>
+<body class="theme-dark">
+
+  <!-- AUDIO TRACK PLACEHOLDERS -->
+  <audio id="audio-exhaust" src="" loop preload="auto"></audio>
+  <audio id="audio-airplane" src="" preload="auto"></audio>
+
+  <!-- Dynamic Atmospheric Liquid Background Canvas -->
+  <canvas id="bg-canvas"></canvas>
+
+  <div id="game-card">
+    <header>
+      <h1>Aynaghar: Days of Silence</h1>
+      <div class="audio-controls">
+        <button id="audio-toggle" class="audio-toggle-btn" onclick="toggleAudio()">Sound Engine: Active</button>
+      </div>
+    </header>
+
+    <!-- Global Status Bar -->
+    <div id="status-bar" class="status-bar" style="display: none;">
+      <div class="metric">
+        <span class="metric-label">Sanity</span>
+        <span id="sanity-val" class="metric-value">100%</span>
+        <div class="bar-container"><div id="sanity-fill" class="bar-fill"></div></div>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Health</span>
+        <span id="health-val" class="metric-value">100%</span>
+        <div class="bar-container"><div id="health-fill" class="bar-fill"></div></div>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Timeline</span>
+        <span id="day-val" class="metric-value">Day 1</span>
+      </div>
+    </div>
+
+    <!-- SCREEN 1: Solemn Cover & Direct Intro -->
+    <div id="screen-1" class="screen active">
+      <div class="scene-viewport">
+        <div class="scene-title">AYNAGHAR: DAYS OF SILENCE</div>
+        <p class="scene-text" style="font-size: 1.1rem; color: #f3f4f6;">
+          An interactive simulation of state-sponsored secret detention in Bangladesh (2009–2024), grounded in victim testimonies from the <em>Enforced Disappearance Commission Final Report (Vol. 1)</em>.
+        </p>
+      </div>
+      <div class="button-group">
+        <button class="action-btn next-btn" onclick="playTapSound(); switchScreen('screen-1', 'screen-2')">
+          <span>Begin Simulation →</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- SCREEN 2: Streamlined Metrics Briefing -->
+    <div id="screen-2" class="screen">
+      <div class="scene-viewport">
+        <h3 style="color: #f3f4f6; margin-bottom: 14px; font-size: 1.15rem; font-weight: 800;">SIMULATION METRICS</h3>
+        
+        <div class="role-card-grid">
+          <div class="role-card">
+            <h4>Sanity Metric</h4>
+            <p>Mental fortitude against isolation, blindfolds, and sensory deprivation inside secret cells.</p>
+          </div>
+
+          <div class="role-card">
+            <h4>Health Metric</h4>
+            <p>Physical endurance against iron restraints, interrogation beatings, and guard retaliation.</p>
+          </div>
+        </div>
+
+        <p class="scene-text" style="font-size: 0.88rem; color: #fca5a5; font-style: italic; margin-top: 8px;">
+          An underlying 1-in-6 probability reflects the 18.3% of documented victims who never returned.
+        </p>
+      </div>
+      <div class="button-group">
+        <button class="action-btn next-btn" onclick="playTapSound(); startAbductionScene()">
+          <span>Enter Secret Custody →</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- SCREEN 3: Abduction Narrative - Part 1: Being Caught -->
+    <div id="screen-3" class="screen">
+      <div class="scene-viewport">
+        <div style="width: 100%;">
+          <span id="typewriter-target" class="typewriter-text"></span><span id="typewriter-cursor" class="cursor-blinking">|</span>
+        </div>
+      </div>
+      <div id="screen-3-actions" class="button-group" style="display: none; margin-top: 14px;">
+        <button class="action-btn next-btn" onclick="playTapSound(); startArrivalScene()">
+          <span>Next →</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- SCREEN 3B: Arrival & Confinement - Part 2: Left in the Cell -->
+    <div id="screen-3b" class="screen">
+      <div class="scene-viewport">
+        <div style="width: 100%;">
+          <span id="typewriter-target-3b" class="typewriter-text"></span><span id="typewriter-cursor-3b" class="cursor-blinking">|</span>
+        </div>
+      </div>
+      <div id="screen-3b-actions" class="button-group" style="display: none; margin-top: 14px;">
+        <button class="action-btn next-btn" onclick="playTapSound(); startCellScene()">
+          <span>Next →</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- SCREEN 4: Pitch-Dark Cell (Fresh Description - No Repetition) -->
+    <div id="screen-4" class="screen">
+      <div class="scene-viewport">
+        <p class="scene-text" id="cell-prompt">
+          <strong>Inside the Cell.</strong> Your blindfold is loosened inside the locked room, but your hands remain cuffed behind your back to an iron bed. The space around you is pitch black, with a constant low hum echoing through the air.
+        </p>
+        <div id="alert-box" class="alert-box"></div>
+      </div>
+      <div id="cell-button-group" class="button-group"></div>
+    </div>
+
+    <!-- SCREEN 5: Audio Engagement (Deduction) -->
+    <div id="screen-5" class="screen">
+      <div class="scene-viewport">
+        <p class="scene-text">
+          In total darkness, your mind clings to any sound past the exhaust fan's continuous hum...
+        </p>
+        <p class="scene-text" style="color: #ef4444; font-weight: 700;">
+          A deep roar echoes periodically overhead from above the ceiling...
+        </p>
+      </div>
+      <div class="button-group">
+        <button class="action-btn next-btn" onclick="playTapSound(); listenCloselyDeduction()">
+          <span>Next →</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- SCREEN 5B: Airport Discovery & Coping Choice -->
+    <div id="screen-5b" class="screen">
+      <div class="scene-viewport">
+        <p class="scene-text" style="color: #f3f4f6; font-weight: bold;">
+          You recognize the sound: a commercial airliner descending toward Dhaka Airport.
+        </p>
+        <div class="survivor-quote">
+          "During the day I could hear aeroplanes and the railway crossing, and I counted the passing days by scratching marks on the wall." — Survivor Code BHHG (Enforced Disappearance Commission Final Report Vol. 1, p. 103, 213)
+        </div>
+        <p class="scene-text">
+          Knowing your cell is located near the airport provides a vital environmental anchor... How do you handle daily confinement?
+        </p>
+      </div>
+      <div class="button-group">
+        <button class="action-btn" onclick="playTapSound(); chooseStrategy('quiet')">
+          <span>Keep Quiet, Recite Prayers & Scratch Wall Tally Marks</span>
+        </button>
+        <button class="action-btn" onclick="playTapSound(); chooseStrategy('scream')">
+          <span>Scream and Bang on the Cell Door</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- SCREEN 5C-QUIET: Outcome of Keeping Quiet & Praying -->
+    <div id="screen-5c-quiet" class="screen">
+      <div class="scene-viewport">
+        <p class="scene-text">
+          By staying quiet and performing daily prayers inside your cell, you maintain internal focus. Guards leave you alone, allowing you to track time using aircraft schedules.
+        </p>
+        <div class="survivor-quote">
+          "At midnight, I performed ablution and stood reciting the Qur'an in my cell... A guarding soldier told me, 'I prayed all night so they wouldn't put you in crossfire.'" — Survivor Code DFE (Enforced Disappearance Commission Final Report Vol. 1, p. 140)
+        </div>
+      </div>
+      <div class="button-group">
+        <button class="action-btn next-btn" onclick="playTapSound(); proceedToFoodScene('screen-5c-quiet')">
+          <span>Next →</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- SCREEN 5C-SCREAM: Outcome of Screaming & Banging Door -->
+    <div id="screen-5c-scream" class="screen">
+      <div class="scene-viewport">
+        <p class="scene-text" style="color: #fca5a5;">
+          Your yelling brings guards marching down the corridor. They unlock the door, strike you with batons, and remove your blanket and pillow.
+        </p>
+        <div class="survivor-quote">
+          "When I tried to sleep or yelled, someone came and said, 'Why are you sleeping?'... In the middle of winter, they removed the blanket and pillow altogether and made me sit without a chair..." — Survivor Code BHFJ (Enforced Disappearance Commission Final Report Vol. 1, p. 82–83)
+        </div>
+      </div>
+      <div class="button-group">
+        <button class="action-btn next-btn" onclick="playTapSound(); proceedToFoodScene('screen-5c-scream')">
+          <span>Next →</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- SCREEN 5D-FOOD: Food & Meals in Secret Custody (Day 7) -->
+    <div id="screen-5d-food" class="screen">
+      <div class="scene-viewport">
+        <div class="scene-title" style="color: #38bdf8;">MEALS IN SECRET CUSTODY (DAY 7)</div>
+        <p class="scene-text">
+          A small flap at the bottom of the cell door opens. A plastic tray with cold rice and thin curry is slid across the floor.
+        </p>
+        <p class="scene-text">
+          Detainees in secret cells are routinely served half the rations of guards, eating with handcuffed hands in darkness.
+        </p>
+      </div>
+      <div class="button-group">
+        <button class="action-btn" onclick="playTapSound(); chooseFoodAction('half_ration')">
+          <span>Eat the Half-Ration in Darkness</span>
+        </button>
+        <button class="action-btn" onclick="playTapSound(); chooseFoodAction('guard_kindness')">
+          <span>A Guard's Quiet Act of Humanity</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- SCREEN 5D-FOOD-EAT: Food Rations Outcome -->
+    <div id="screen-5d-food-eat" class="screen">
+      <div class="scene-viewport">
+        <p class="scene-text">
+          You eat what little food is provided. In total darkness, meals become one of the few indicators of passing days or special calendar events.
+        </p>
+        <div class="survivor-quote">
+          "On special days they served special meals, which made us realize that it was Eid." — Survivor Code BHFI (Enforced Disappearance Commission Final Report Vol. 1, p. 49)
+        </div>
+      </div>
+      <div class="button-group">
+        <button class="action-btn next-btn" onclick="playTapSound(); proceedToInterrogation('screen-5d-food-eat')">
+          <span>Next →</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- SCREEN 5D-FOOD-KINDNESS: Guard Food Sharing Outcome -->
+    <div id="screen-5d-food-kindness" class="screen">
+      <div class="scene-viewport">
+        <p class="scene-text">
+          Late one night, a young guarding soldier quietly slides his own full meal through the door flap to you.
+        </p>
+        <div class="survivor-quote">
+          "One soldier in his mid-twenties coped by quietly giving his own full meals to captives who received only half-rations... A captive tearfully thanked him for finally getting a full meal, prompting the soldier to break down crying in silence." — Commission Investigation (Enforced Disappearance Commission Final Report Vol. 1, p. 139–140)
+        </div>
+      </div>
+      <div class="button-group">
+        <button class="action-btn next-btn" onclick="playTapSound(); proceedToInterrogation('screen-5d-food-kindness')">
+          <span>Next →</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- STAGE 6A: Interrogation Micro-Page 1 -->
+    <div id="screen-6a" class="screen">
+      <div class="scene-viewport">
+        <div class="scene-title" style="color: #38bdf8;">STAGE 2: THE INTERROGATION ROOM (DAY 45)</div>
+        <p class="scene-text">
+          45 days of secret incommunicado custody have passed. You are re-blindfolded with a <em>jom tupi</em>, dragged down a corridor, and seated at a metal table.
+        </p>
+        <p class="scene-text">
+          Interrogators remove your blindfold under blinding fluorescent lights, forcing you to look at a document.
+        </p>
+      </div>
+      <div class="button-group">
+        <button class="action-btn next-btn" onclick="playTapSound(); switchScreen('screen-6a', 'screen-6b')">
+          <span>Next →</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- STAGE 6B: Interrogation Micro-Page 2 -->
+    <div id="screen-6b" class="screen">
+      <div class="scene-viewport">
+        <p class="scene-text">
+          An officer slides a pre-scripted <strong>Section 164 Statement</strong> across the table, confessing to fabricated terrorism charges under the Anti-Terrorism Act.
+        </p>
+        <div class="survivor-quote">
+          "If you say this, you will get out. If you refuse, we will put you in crossfire here and you will die." — Captor Threat (Enforced Disappearance Commission Final Report Vol. 1, p. 118)
+        </div>
+      </div>
+      <div class="button-group">
+        <button class="action-btn" onclick="playTapSound(); chooseInterrogation('sign')">
+          <span>Sign the Pre-Scripted Confession</span>
+        </button>
+        <button class="action-btn" onclick="playTapSound(); chooseInterrogation('refuse')">
+          <span>Refuse to Sign Forced Statement</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- STAGE 7A: Court Grooming Micro-Page 1 -->
+    <div id="screen-7a" class="screen">
+      <div class="scene-viewport">
+        <div class="scene-title" style="color: #d97706;">STAGE 3: THE MAGISTRATE APPEARANCE (DAY 180)</div>
+        <p class="scene-text">
+          After nearly six months (180 days) of secret custody, captors prepare to "legalise" your arrest. They trim your beard, provide clean clothes, and warn you against disclosing secret detention to the judge.
+        </p>
+        <div class="survivor-quote">
+          "If you tell the magistrate you were arrested three months ago, we will file five more cases against you. Say you were arrested today." — Captor Warning (Enforced Disappearance Commission Final Report Vol. 1, p. 102)
+        </div>
+      </div>
+      <div class="button-group">
+        <button class="action-btn next-btn" onclick="playTapSound(); switchScreen('screen-7a', 'screen-7b')">
+          <span>Next →</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- STAGE 7B: Court Choice Micro-Page 2 -->
+    <div id="screen-7b" class="screen">
+      <div class="scene-viewport">
+        <p class="scene-text">
+          Standing before the magistrate, plainclothes officers watch you from the back of the courtroom.
+        </p>
+        <p class="scene-text">
+          The magistrate asks if you have anything to say. What do you do?
+        </p>
+      </div>
+      <div class="button-group">
+        <button class="action-btn" onclick="playTapSound(); chooseCourt('follow')">
+          <span>Follow the Coached Script Before the Magistrate</span>
+        </button>
+        <button class="action-btn" onclick="playTapSound(); chooseCourt('expose')">
+          <span>Speak Out: Inform Magistrate of Secret Detention</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- STAGE 8: Prison Remand & Formal Incarceration -->
+    <div id="screen-8" class="screen">
+      <div class="scene-viewport">
+        <div class="scene-title" style="color: #a855f7;">PRISON REMAND & PRE-TRIAL DETENTION (DAY 250)</div>
+        <p class="scene-text" id="prison-outcome-text"></p>
+
+        <div class="interview-block">
+          <div class="interview-label">Legal Reality (Commission Report Vol. 1, p. 102)</div>
+          <div class="interview-text">
+            "Court appearances rarely resulted in freedom. Even when victims exposed their disappearance, magistrates routinely granted police remand anyway, transferring victims to central prison under fabricated charges."
+          </div>
+        </div>
+      </div>
+      <div class="button-group">
+        <button class="action-btn next-btn" onclick="playTapSound(); showEpilogue()">
+          <span>Next →</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- STAGE 9: Epilogue, Stats & Flourish Survey Embed -->
+    <div id="screen-9" class="screen">
+      <div class="scene-viewport">
+        <div class="scene-title" style="color: #10b981;">SIMULATION EPILOGUE & NATIONAL DATA</div>
+        
+        <p class="scene-text" id="epilogue-survival-msg" style="line-height: 1.7;"></p>
+
+        <!-- Flourish Survey Visualization Embed Slot -->
+        <div class="interview-block" style="border-color: #10b981; margin-top: 18px; padding: 12px;">
+          <div class="flourish-embed flourish-survey" data-src="visualisation/30307167">
+            <script src="https://public.flourish.studio/resources/embed.js"></script>
+            <noscript><img src="https://public.flourish.studio/visualisation/30307167/thumbnail" width="100%" alt="survey visualization" /></noscript>
+          </div>
+        </div>
+      </div>
+
+      <div class="button-group" style="margin-top: 16px;">
+        <button class="action-btn next-btn" onclick="playTapSound(); location.reload()">
+          <span>Restart Simulation</span>
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    /* =========================================================
+       1. ATMOSPHERIC LIQUID BACKGROUND CANVAS ANIMATION
+       ========================================================= */
+    const canvas = document.getElementById('bg-canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    let particles = [];
+
+    function resizeCanvas() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    class LiquidOrb {
+      constructor() {
+        this.reset();
+      }
+      reset() {
+        this.x = Math.random() * width;
+        this.y = Math.random() * height;
+        this.radius = Math.random() * 180 + 80;
+        this.vx = (Math.random() - 0.5) * 0.4;
+        this.vy = (Math.random() - 0.5) * 0.4;
+        this.hue = Math.random() < 0.7 ? 350 : 200; // Crimson or Deep Cyan
+        this.alpha = Math.random() * 0.15 + 0.05;
+      }
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        if (this.x < -100 || this.x > width + 100 || this.y < -100 || this.y > height + 100) {
+          this.reset();
+        }
+      }
+      draw() {
+        const grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius);
+        grad.addColorStop(0, `hsla(${this.hue}, 80%, 45%, ${this.alpha})`);
+        grad.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    for (let i = 0; i < 12; i++) {
+      particles.push(new LiquidOrb());
+    }
+
+    function animateBackground() {
+      ctx.clearRect(0, 0, width, height);
+      particles.forEach(p => {
+        p.update();
+        p.draw();
+      });
+      requestAnimationFrame(animateBackground);
+    }
+    animateBackground();
+
+    /* =========================================================
+       2. WEB AUDIO SYNTHESIZER ENGINE
+       ========================================================= */
+    let audioCtx = null;
+    let isAudioEnabled = true;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function toggleAudio() {
+      isAudioEnabled = !isAudioEnabled;
+      const btn = document.getElementById('audio-toggle');
+      if (isAudioEnabled) {
+        btn.innerText = "Sound Engine: Active";
+        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+      } else {
+        btn.innerText = "Sound Engine: Muted";
+      }
+    }
+
+    function playTapSound() {
+      if (!isAudioEnabled) return;
+      initAudio();
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(110, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(35, audioCtx.currentTime + 0.015);
+        gain.gain.setValueAtTime(0.025, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.015);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.015);
+      } catch(e) {}
+    }
+
+    /* =========================================================
+       3. GAME STATE & NAVIGATION
+       ========================================================= */
+    let sanity = 100;
+    let health = 100;
+    let dayCount = 1;
+
+    function updateMetrics() {
+      document.getElementById('sanity-val').innerText = sanity + '%';
+      document.getElementById('health-val').innerText = health + '%';
+      document.getElementById('day-val').innerText = 'Day ' + dayCount;
+      document.getElementById('sanity-fill').style.width = sanity + '%';
+      document.getElementById('health-fill').style.width = health + '%';
+    }
+
+    function switchScreen(fromId, toId, themeClass = null) {
+      if (themeClass) {
+        document.body.className = themeClass;
+        document.getElementById('game-card').className = themeClass;
+      }
+
+      let fromEl = null;
+      if (fromId) {
+        fromEl = document.getElementById(fromId);
+      }
+      if (!fromEl) {
+        fromEl = document.querySelector('.screen.active');
+      }
+
+      const toEl = document.getElementById(toId);
+      if (!toEl) return;
+      
+      if (fromEl) {
+        fromEl.classList.remove('active');
+        setTimeout(() => {
+          fromEl.style.display = 'none';
+          toEl.style.display = 'block';
+          setTimeout(() => toEl.classList.add('active'), 20);
+        }, 350);
+      } else {
+        toEl.style.display = 'block';
+        setTimeout(() => toEl.classList.add('active'), 20);
+      }
+    }
+
+    // Typewriter Engine with Same-Color Cursor Controls
+    async function startAbductionScene() {
+      sanity = 100;
+      health = 100;
+      dayCount = 1;
+      updateMetrics();
+
+      document.getElementById('status-bar').style.display = 'flex';
+      switchScreen('screen-2', 'screen-3', 'theme-dark');
+
+      const paragraphs = [
+        "You do not know what day it is. You do not know what hour it is.",
+        "You were taken in broad daylight, forced into a microbus, and blindfolded with three tight layers of cloth."
+      ];
+      
+      const target = document.getElementById('typewriter-target');
+      const cursor = document.getElementById('typewriter-cursor');
+      
+      target.innerText = "";
+      document.getElementById('screen-3-actions').style.display = 'none';
+
+      for (let pIdx = 0; pIdx < paragraphs.length; pIdx++) {
+        const text = paragraphs[pIdx];
+        cursor.className = "cursor-solid";
+
+        for (let cIdx = 0; cIdx < text.length; cIdx++) {
+          target.innerText += text.charAt(cIdx);
+          if (cIdx % 4 === 0) playTapSound();
+          await new Promise(r => setTimeout(r, 32));
+        }
+
+        if (pIdx < paragraphs.length - 1) {
+          target.innerText += "\n\n";
+          cursor.className = "cursor-blinking";
+          await new Promise(r => setTimeout(r, 1600));
+        }
+      }
+
+      cursor.className = "cursor-blinking";
+      document.getElementById('screen-3-actions').style.display = 'flex';
+    }
+
+    async function startArrivalScene() {
+      switchScreen('screen-3', 'screen-3b', 'theme-dark');
+
+      const paragraphs3b = [
+        "Dragged through a cold, silent corridor, you are forced onto an iron bed. Steel handcuffs clamp your wrists behind your back, anchoring you to the bedframe.",
+        "The footsteps fade down the corridor... A heavy iron door slams shut...",
+        "In the distance, you hear a loud humming exhaust fan, and someone weeping quietly..."
+      ];
+      
+      const target = document.getElementById('typewriter-target-3b');
+      const cursor = document.getElementById('typewriter-cursor-3b');
+      
+      target.innerText = "";
+      document.getElementById('screen-3b-actions').style.display = 'none';
+
+      for (let pIdx = 0; pIdx < paragraphs3b.length; pIdx++) {
+        const text = paragraphs3b[pIdx];
+        cursor.className = "cursor-solid";
+
+        for (let cIdx = 0; cIdx < text.length; cIdx++) {
+          target.innerText += text.charAt(cIdx);
+          if (cIdx % 4 === 0) playTapSound();
+          await new Promise(r => setTimeout(r, 32));
+        }
+
+        if (pIdx < paragraphs3b.length - 1) {
+          target.innerText += "\n\n";
+          cursor.className = "cursor-blinking";
+          await new Promise(r => setTimeout(r, 1600));
+        }
+      }
+
+      cursor.className = "cursor-blinking";
+      document.getElementById('screen-3b-actions').style.display = 'flex';
+    }
+
+    function startCellScene() {
+      switchScreen('screen-3b', 'screen-4', 'theme-dark');
+      renderCellButtons();
+    }
+
+    function renderCellButtons() {
+      document.getElementById('cell-button-group').innerHTML = `
+        <button id="btn-blindfold" class="action-btn" onclick="playTapSound(); tryAction('blindfold')">1. Attempt to Remove Blindfold</button>
+        <button id="btn-cuffs" class="action-btn" onclick="playTapSound(); tryAction('cuffs')">2. Attempt to Pull Cuffs Free</button>
+        <button id="btn-look" class="action-btn" onclick="playTapSound(); tryAction('look')">3. Look Around Dark Cell</button>
+      `;
+    }
+
+    function tryAction(action) {
+      const box = document.getElementById('alert-box');
+      box.style.display = 'block';
+
+      if (action === 'blindfold') {
+        box.innerText = "Inside the cell, the blindfold is unloosened, but your hands remain cuffed behind your back to the iron bed frame.";
+      } else if (action === 'cuffs') {
+        box.innerText = "Steel handcuffs bite into your wrists. They are anchored tightly to the bedframe.";
+      } else if (action === 'look') {
+        box.innerText = "Pitch darkness with faint light creeping under the door gap. Exhaust fan hums continuously.";
+      }
+
+      document.getElementById('cell-button-group').innerHTML = `
+        <button class="action-btn next-btn" onclick="playTapSound(); switchScreen('screen-4', 'screen-5')">
+          <span>Next →</span>
+        </button>
+      `;
+    }
+
+    function listenCloselyDeduction() {
+      switchScreen('screen-5', 'screen-5b', 'theme-dark');
+    }
+
+    function chooseStrategy(choice) {
+      dayCount = 14;
+      if (choice === 'quiet') {
+        sanity = Math.min(100, sanity + 5);
+        updateMetrics();
+        switchScreen('screen-5b', 'screen-5c-quiet', 'theme-dark');
+      } else {
+        health = Math.max(0, health - 15);
+        updateMetrics();
+        switchScreen('screen-5b', 'screen-5c-scream', 'theme-dark');
+      }
+    }
+
+    function proceedToFoodScene(fromScreenId) {
+      switchScreen(fromScreenId, 'screen-5d-food', 'theme-dark');
+    }
+
+    function chooseFoodAction(choice) {
+      if (choice === 'half_ration') {
+        switchScreen('screen-5d-food', 'screen-5d-food-eat', 'theme-dark');
+      } else {
+        sanity = Math.min(100, sanity + 5);
+        updateMetrics();
+        switchScreen('screen-5d-food', 'screen-5d-food-kindness', 'theme-dark');
+      }
+    }
+
+    function proceedToInterrogation(fromScreenId) {
+      dayCount = 45;
+      updateMetrics();
+      switchScreen(fromScreenId, 'screen-6a', 'theme-interrogation');
+    }
+
+    function chooseInterrogation(choice) {
+      if (choice === 'sign') { sanity = Math.max(0, sanity - 20); }
+      else { health = Math.max(0, health - 35); }
+      
+      dayCount = 180;
+      updateMetrics();
+      switchScreen('screen-6b', 'screen-7a', 'theme-court');
+    }
+
+    function chooseCourt(choice) {
+      if (choice === 'follow') {}
+      else {
+        health = Math.max(0, health - 25);
+        sanity = Math.max(0, sanity - 15);
+      }
+      dayCount = 250;
+      updateMetrics();
+      showPrisonRemand();
+    }
+
+    function showPrisonRemand() {
+      switchScreen('screen-7b', 'screen-8', 'theme-prison');
+      const target = document.getElementById('prison-outcome-text');
+
+      target.innerHTML = `
+        <strong>Resurfaced in Central Prison (Kashimpur/Keraniganj).</strong><br><br>
+        After 250 days of secret custody, you were formally presented before a magistrate under fabricated Anti-Terrorism Act charges. The court granted police remand, transferring you to central prison facing years of pre-trial incarceration.<br><br>
+        <em>Family Financial Impact:</em> Families incurred an average legal expenditure of BDT 700,000 during disappearance and litigation.
+      `;
+    }
+
+    function showEpilogue() {
+      switchScreen('screen-8', 'screen-9', 'theme-epilogue');
+      
+      const msg = document.getElementById('epilogue-survival-msg');
+      msg.innerHTML = `
+        <strong>Simulation Summary:</strong> You survived <strong>${dayCount}+ days</strong> of secret detention and pre-trial incarceration before resurfacing was officially documented.<br><br>
+        <span style="color: #fca5a5;"><strong>Historical Context:</strong></span> In the Commission's documented dataset, <strong>1 in every 6 victims (18.3%) never returned alive</strong>—they were extrajudicially executed in staged 'Golf Operations' (Crossfire) or permanently disappeared. Resurfacing into central prison under false charges was the primary mechanism of survival.
+      `;
+    }
+  </script>
+</body>
+</html>
