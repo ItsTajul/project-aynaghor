@@ -510,6 +510,61 @@
       border-color: rgba(255, 255, 255, 0.08);
       transform: none !important;
     }
+
+    @media (max-width: 600px) {
+      html, body {
+        height: auto;
+        min-height: 100%;
+      }
+
+      body {
+        align-items: flex-start;
+        padding: 12px;
+        overflow-y: auto;
+      }
+
+      #game-card {
+        width: 100%;
+        padding: 16px;
+        border-radius: 14px;
+      }
+
+      #screen-1 h2 {
+        font-size: 1.35rem !important;
+        letter-spacing: 0.7px !important;
+        line-height: 1.25;
+      }
+
+      #screen-1 > .scene-viewport {
+        padding: 24px 14px !important;
+      }
+
+      .stat-chips-grid,
+      .role-card-grid,
+      .dual-perspective-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .stat-chip,
+      .role-card,
+      .perspective-card {
+        min-width: 0;
+      }
+
+      .status-bar {
+        flex-wrap: wrap;
+        padding: 12px 14px;
+      }
+
+      .metric {
+        flex: 1 1 28%;
+        min-width: 75px;
+      }
+
+      .action-btn {
+        padding: 14px 16px;
+      }
+    }
   </style>
 </head>
 <body class="theme-dark">
