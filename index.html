@@ -89,9 +89,24 @@
       gap: 10px;
     }
 
-    
+    .audio-toggle-btn {
+      background: rgba(30, 30, 45, 0.85);
+      border: 1px solid rgba(245, 158, 11, 0.5);
+      color: #fbbf24;
+      font-size: 0.8rem;
+      padding: 7px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.25s ease;
+      backdrop-filter: blur(6px);
+    }
 
-    
+    .audio-toggle-btn:hover {
+      background: rgba(245, 158, 11, 0.25);
+      border-color: #f59e0b;
+      box-shadow: 0 0 16px rgba(245, 158, 11, 0.4);
+    }
 
     /* Architectural Blueprint Header Indicator */
     .blueprint-bar {
@@ -287,10 +302,20 @@
     }
 
     .perspective-card.outside {
-      background: #f8fafc;
-      border: 1px solid #cbd5e1;
-      color: #0f172a;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      background: #f8fafc !important;
+      border: 1px solid #cbd5e1 !important;
+      color: #0f172a !important;
+    }
+    .perspective-card.outside h4 {
+      color: #b45309 !important;
+    }
+    .perspective-card.outside p {
+      color: #1e293b !important;
+    }
+    .perspective-card.outside .survivor-quote {
+      background: #fef3c7 !important;
+      border-left-color: #f59e0b !important;
+      color: #78350f !important;
     }
 
     .perspective-card h4 {
@@ -337,11 +362,27 @@
     }
 
     /* Cell SVG Vector Graphic Box */
-    
+    .cell-vector-box {
+      width: 100%;
+      height: 180px;
+      background: #050608;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      margin: 16px 0;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
 
-    
+    .fan-spin {
+      transform-origin: center;
+      animation: spinFan 1.8s linear infinite;
+    }
 
-    
+    @keyframes spinFan {
+      100% { transform: rotate(360deg); }
     }
 
     /* Stat Chips Grid (Intro Page) */
@@ -533,7 +574,7 @@
 
     <!-- SCREEN 1: Intro Page (No Duplicate Title) -->
     <div id="screen-1" class="screen active">
-      <div class="scene-viewport" style="text-align: center; padding: 36px 24px;">
+      <div class="scene-viewport" style="text-align: center; padding: 32px 20px;">
         <h2 style="font-size: 1.8rem; color: #ef4444; font-weight: 800; letter-spacing: 1.5px; margin-bottom: 8px; text-transform: uppercase;">
           AYNAGHAR: DAYS OF SILENCE
         </h2>
@@ -541,11 +582,11 @@
           An Interactive Newsgame Simulator by Md Tajul Islam & Kaniz Fatema
         </p>
 
-        <p class="scene-text" style="font-size: 1.05rem; color: #f3f4f6; line-height: 1.7; max-width: 850px; margin: 0 auto 20px auto;">
-          An interactive investigation into state-sponsored secret detention in Bangladesh (2009–2024). Grounded in original investigative reporting and 256 verified victim testimonies from the official <em>Enforced Disappearance Commission Final Report (Vol. 1)</em>.
+        <p class="scene-text" style="font-size: 1.02rem; color: #f3f4f6; line-height: 1.7; max-width: 800px; margin: 0 auto 20px auto;">
+          An interactive investigation into state-sponsored secret detention in Bangladesh (2009–2024). Grounded in original investigative reporting by Kaniz Fatema and official findings from 256 verified victim testimonies in the <em>Enforced Disappearance Commission Final Report (Vol. 1)</em>.
         </p>
 
-        <!-- Stat Chips Grid -->
+        <!-- Stat Chips Grid (Exactly 3 Chips) -->
         <div class="stat-chips-grid">
           <div class="stat-chip">
             <div class="stat-chip-num">250+ DAYS</div>
@@ -560,17 +601,8 @@
             <div class="stat-chip-label">Standard Cell Dimensions</div>
           </div>
         </div>
-          <div class="stat-chip">
-            <div class="stat-chip-num">1 IN 6</div>
-            <div class="stat-chip-label">Never Returned Alive</div>
-          </div>
-          <div class="stat-chip">
-            <div class="stat-chip-num">100% REPORT</div>
-            <div class="stat-chip-label">Verified Testimonies</div>
-          </div>
-        </div>
 
-        <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 14px; margin-top: 12px; text-align: left;">
+        <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 14px; margin-top: 16px; text-align: left;">
           <p class="scene-text" style="font-size: 0.88rem; color: #cbd5e1; margin-bottom: 0;">
             <strong>Experience Briefing:</strong> You will navigate the real-world choices faced by victims—from solitary cell confinement to physical interrogation, courtroom grooming, and family legal struggles.<br>
             <em>Estimated time: 3–5 minutes.</em>
@@ -578,7 +610,7 @@
         </div>
       </div>
       <div class="button-group">
-        <button class="action-btn next-btn" onclick="playTapSound(); startSimulationFromIntro()">
+        <button class="action-btn next-btn" onclick="playTapSound(); switchScreen('screen-1', 'screen-2', 'theme-dark')">
           <span>Enter Simulation Briefing →</span>
         </button>
       </div>
@@ -586,8 +618,8 @@
 
     <!-- SCREEN 2: Streamlined Rules & Metric Trade-Offs -->
     <div id="screen-2" class="screen">
-      <div class="scene-viewport">
-        <h3 style="color: #f3f4f6; margin-bottom: 14px; font-size: 1.15rem; font-weight: 800; letter-spacing: 0.8px;">BEFORE YOU BEGIN</h3>
+      <div class="scene-viewport" style="padding: 28px 20px;">
+        <h3 style="color: #f3f4f6; margin-bottom: 12px; font-size: 1.18rem; font-weight: 800; letter-spacing: 0.8px;">BEFORE YOU BEGIN</h3>
         
         <p class="scene-text" style="font-size: 0.95rem; color: #cbd5e1; margin-bottom: 16px;">
           As you step into this simulation, two metrics at the top reflect the human toll of secret custody:
@@ -595,19 +627,19 @@
 
         <div class="role-card-grid" style="margin: 14px 0;">
           <div class="role-card">
-            <h4>Sanity Indicator</h4>
-            <p>Mental endurance against solitary confinement, blindfolds, and total darkness inside secret cells.</p>
+            <h4 style="color: #38bdf8; font-size: 0.92rem; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px;">Sanity Indicator</h4>
+            <p style="font-size: 0.88rem; color: #cbd5e1; line-height: 1.5;">Mental endurance against solitary confinement, blindfolds, and total darkness inside secret cells.</p>
           </div>
 
           <div class="role-card">
-            <h4>Health Indicator</h4>
-            <p>Physical health against iron restraints, interrogation beatings, and guard retaliation.</p>
+            <h4 style="color: #38bdf8; font-size: 0.92rem; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px;">Health Indicator</h4>
+            <p style="font-size: 0.88rem; color: #cbd5e1; line-height: 1.5;">Physical health against iron restraints, beatings, and guard retaliation.</p>
           </div>
         </div>
 
-        <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 10px; padding: 14px; margin-top: 10px;">
-          <p class="scene-text" style="font-size: 0.88rem; color: #fca5a5; margin-bottom: 0;">
-            <strong>The Real-World Risk (1 in 6 Victims):</strong> In official Commission findings, <strong>18.3% of documented victims never returned alive</strong>—they were extrajudicially executed in staged 'Crossfire' operations or permanently disappeared. High-risk decisions during interrogation carry this exact real-world risk in the simulator.
+        <div style="background: rgba(153, 27, 27, 0.18); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 10px; padding: 14px 16px; margin-top: 14px;">
+          <p class="scene-text" style="font-size: 0.88rem; color: #fca5a5; margin-bottom: 0; line-height: 1.55;">
+            <strong>The Real-World Risk (1 in 6 Victims):</strong> In the official Commission findings, <strong>18.3% of documented victims never returned alive</strong>—they were extrajudicially executed in staged 'Crossfire' operations or permanently disappeared. High-risk decisions during interrogation carry this exact real-world risk in the simulator.
           </p>
         </div>
       </div>
@@ -653,7 +685,11 @@
           <strong>Inside the Cell.</strong> Your blindfold is loosened inside the locked room, but your hands remain cuffed behind your back to an iron bed. The space around you is pitch black.
         </p>
 
-        </div>
+        <!-- Cell Vector Illustration Box -->
+        
+
+        <div id="alert-box" class="alert-box"></div>
+      </div>
       <div id="cell-button-group" class="button-group"></div>
     </div>
 
@@ -1040,12 +1076,7 @@
       }
     }
 
-    function toggleAudio() {
-      isAudioEnabled = !isAudioEnabled;
-      if (isAudioEnabled) {
-        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-      }
-    }
+
 
     function playTapSound() {
       if (!isAudioEnabled) return;
@@ -1287,10 +1318,7 @@
         // 1-in-6 Fatal Branching Logic: Refusing to sign leads to Golf Operation Execution
         health = 0;
         updateMetrics();
-        sanity = 0; health = 0; updateMetrics();
-      document.getElementById('status-bar').style.filter = 'grayscale(100%)';
-      document.getElementById('status-bar').style.opacity = '0.35';
-      switchScreen('screen-6b', 'screen-fatal', 'theme-fatal');
+        switchScreen('screen-6b', 'screen-fatal', 'theme-fatal');
       }
     }
 
@@ -1318,13 +1346,6 @@
     }
 
     function showEpilogue() {
-      if (sanity === 0 && health === 0) {
-        document.getElementById('status-bar').style.filter = 'grayscale(100%)';
-        document.getElementById('status-bar').style.opacity = '0.35';
-      } else {
-        document.getElementById('status-bar').style.filter = 'none';
-        document.getElementById('status-bar').style.opacity = '1';
-      }
       // Determine if came from fatal screen or prison screen
       const currentScreen = document.querySelector('.screen.active');
       const fromId = currentScreen ? currentScreen.id : 'screen-8';
