@@ -205,6 +205,10 @@
     .metric-value { font-weight: 800; font-size: 1.1rem; color: #f3f4f6; margin-top: 2px; }
     .bar-container { width: 100%; height: 5px; background-color: rgba(255, 255, 255, 0.12); border-radius: 4px; overflow: hidden; margin-top: 5px; }
     .bar-fill { height: 100%; transition: width 0.4s ease; }
+    .status-bar.metrics-disabled .metric-label,
+    .status-bar.metrics-disabled .metric-value { color: #6b7280; }
+    .status-bar.metrics-disabled .bar-container { background-color: rgba(107, 114, 128, 0.2); }
+    .status-bar.metrics-disabled .bar-fill { width: 100% !important; background-color: #6b7280 !important; }
     #sanity-fill { background-color: #3b82f6; width: 70%; }
     #health-fill { background-color: #dc2626; width: 90%; }
 
@@ -707,7 +711,7 @@
 
     <!-- SCREEN 3: Abduction Narrative - Part 1: Being Caught -->
     <div id="screen-3" class="screen">
-      <div class="scene-viewport">
+      <div class="scene-viewport" onclick="skipTypewriter('screen-3')">
         <div style="width: 100%;">
           <span id="typewriter-target" class="typewriter-text"></span><span id="typewriter-cursor" class="cursor-blinking">|</span>
         </div>
@@ -721,7 +725,7 @@
 
     <!-- SCREEN 3B: Arrival & Confinement - Part 2: Left in the Cell (Shortened Text) -->
     <div id="screen-3b" class="screen">
-      <div class="scene-viewport">
+      <div class="scene-viewport" onclick="skipTypewriter('screen-3b')">
         <div style="width: 100%;">
           <span id="typewriter-target-3b" class="typewriter-text"></span><span id="typewriter-cursor-3b" class="cursor-blinking">|</span>
         </div>
@@ -1178,6 +1182,13 @@
       document.getElementById('health-fill').style.width = health + '%';
     }
 
+    function setMetricsDisabled(disabled) {
+      const statusBar = document.getElementById('status-bar');
+      statusBar.classList.toggle('metrics-disabled', disabled);
+      document.getElementById('sanity-val').innerText = disabled ? '—' : Math.round(sanity) + '%';
+      document.getElementById('health-val').innerText = disabled ? '—' : Math.round(health) + '%';
+    }
+
     function setBlueprintActive(nodeId) {
       const nodes = ['node-abduction', 'node-cell', 'node-interrogation', 'node-court', 'node-prison'];
       let found = false;
@@ -1224,10 +1235,19 @@
     }
 
     /* TYPEWRITER SCENES */
+    let activeTypewriter = null;
+
+    function skipTypewriter(screenId) {
+      if (!activeTypewriter || activeTypewriter.screenId !== screenId || !activeTypewriter.isTyping) return;
+
+      activeTypewriter.finishParagraphRequested = true;
+    }
+
     async function startAbductionScene() {
       sanity = 70;
       health = 90;
       dayCount = 1;
+      setMetricsDisabled(false);
       updateMetrics();
 
       document.getElementById('blueprint-bar').style.display = 'flex';
@@ -1243,19 +1263,29 @@
       
       const target = document.getElementById('typewriter-target');
       const cursor = document.getElementById('typewriter-cursor');
+      const actions = document.getElementById('screen-3-actions');
+      const typingState = { screenId: 'screen-3', target, cursor, actions, paragraphs, isTyping: false, finishParagraphRequested: false };
+      activeTypewriter = typingState;
       
       target.innerText = "";
-      document.getElementById('screen-3-actions').style.display = 'none';
+      actions.style.display = 'none';
 
       for (let pIdx = 0; pIdx < paragraphs.length; pIdx++) {
         const text = paragraphs[pIdx];
         cursor.className = "cursor-solid";
+        typingState.isTyping = true;
 
         for (let cIdx = 0; cIdx < text.length; cIdx++) {
           target.innerText += text.charAt(cIdx);
           if (cIdx % 4 === 0) playTapSound();
           await new Promise(r => setTimeout(r, 30));
+          if (typingState.finishParagraphRequested) {
+            target.innerText = paragraphs.slice(0, pIdx + 1).join('\n\n');
+            typingState.finishParagraphRequested = false;
+            break;
+          }
         }
+        typingState.isTyping = false;
 
         if (pIdx < paragraphs.length - 1) {
           target.innerText += "\n\n";
@@ -1265,7 +1295,8 @@
       }
 
       cursor.className = "cursor-blinking";
-      document.getElementById('screen-3-actions').style.display = 'flex';
+      actions.style.display = 'flex';
+      if (activeTypewriter === typingState) activeTypewriter = null;
     }
 
     async function startArrivalScene() {
@@ -1278,19 +1309,29 @@
       
       const target = document.getElementById('typewriter-target-3b');
       const cursor = document.getElementById('typewriter-cursor-3b');
+      const actions = document.getElementById('screen-3b-actions');
+      const typingState = { screenId: 'screen-3b', target, cursor, actions, paragraphs, isTyping: false, finishParagraphRequested: false };
+      activeTypewriter = typingState;
       
       target.innerText = "";
-      document.getElementById('screen-3b-actions').style.display = 'none';
+      actions.style.display = 'none';
 
       for (let pIdx = 0; pIdx < paragraphs.length; pIdx++) {
         const text = paragraphs[pIdx];
         cursor.className = "cursor-solid";
+        typingState.isTyping = true;
 
         for (let cIdx = 0; cIdx < text.length; cIdx++) {
           target.innerText += text.charAt(cIdx);
           if (cIdx % 4 === 0) playTapSound();
           await new Promise(r => setTimeout(r, 30));
+          if (typingState.finishParagraphRequested) {
+            target.innerText = paragraphs.slice(0, pIdx + 1).join('\n\n');
+            typingState.finishParagraphRequested = false;
+            break;
+          }
         }
+        typingState.isTyping = false;
 
         if (pIdx < paragraphs.length - 1) {
           target.innerText += "\n\n";
@@ -1300,7 +1341,8 @@
       }
 
       cursor.className = "cursor-blinking";
-      document.getElementById('screen-3b-actions').style.display = 'flex';
+      actions.style.display = 'flex';
+      if (activeTypewriter === typingState) activeTypewriter = null;
     }
 
     function startCellScene() {
@@ -1388,6 +1430,7 @@
         // 1-in-6 Fatal Branching Logic: Refusing to sign leads to Golf Operation Execution
         health = 0;
         updateMetrics();
+        setMetricsDisabled(true);
         switchScreen('screen-6b', 'screen-fatal', 'theme-fatal');
       }
     }
