@@ -205,8 +205,8 @@
     .metric-value { font-weight: 800; font-size: 1.1rem; color: #f3f4f6; margin-top: 2px; }
     .bar-container { width: 100%; height: 5px; background-color: rgba(255, 255, 255, 0.12); border-radius: 4px; overflow: hidden; margin-top: 5px; }
     .bar-fill { height: 100%; transition: width 0.4s ease; }
-    #sanity-fill { background-color: #3b82f6; width: 100%; }
-    #health-fill { background-color: #dc2626; width: 100%; }
+    #sanity-fill { background-color: #3b82f6; width: 70%; }
+    #health-fill { background-color: #dc2626; width: 90%; }
 
     /* Scene Viewport Container */
     .scene-viewport {
@@ -613,12 +613,12 @@
     <div id="status-bar" class="status-bar" style="display: none;">
       <div class="metric">
         <span class="metric-label">Sanity</span>
-        <span id="sanity-val" class="metric-value">100%</span>
+        <span id="sanity-val" class="metric-value">70%</span>
         <div class="bar-container"><div id="sanity-fill" class="bar-fill"></div></div>
       </div>
       <div class="metric">
         <span class="metric-label">Health</span>
-        <span id="health-val" class="metric-value">100%</span>
+        <span id="health-val" class="metric-value">90%</span>
         <div class="bar-container"><div id="health-fill" class="bar-fill"></div></div>
       </div>
       <div class="metric">
@@ -1152,13 +1152,27 @@
     }
 
     /* 3. GAME STATE & NAVIGATION */
-    let sanity = 100;
-    let health = 100;
+    const DAILY_METRIC_RETENTION = 0.9975;
+    let sanity = 70;
+    let health = 90;
     let dayCount = 1;
 
+    function advanceToDay(nextDay, shouldDecay = true) {
+      const elapsedDays = Math.max(0, nextDay - dayCount);
+
+      if (shouldDecay) {
+        const retention = Math.pow(DAILY_METRIC_RETENTION, elapsedDays);
+        sanity = Math.max(0, sanity * retention);
+        health = Math.max(0, health * retention);
+      }
+      dayCount = nextDay;
+    }
+
     function updateMetrics() {
-      document.getElementById('sanity-val').innerText = sanity + '%';
-      document.getElementById('health-val').innerText = health + '%';
+      const displayedSanity = Math.round(sanity);
+      const displayedHealth = Math.round(health);
+      document.getElementById('sanity-val').innerText = displayedSanity + '%';
+      document.getElementById('health-val').innerText = displayedHealth + '%';
       document.getElementById('day-val').innerText = 'Day ' + dayCount;
       document.getElementById('sanity-fill').style.width = sanity + '%';
       document.getElementById('health-fill').style.width = health + '%';
@@ -1211,8 +1225,8 @@
 
     /* TYPEWRITER SCENES */
     async function startAbductionScene() {
-      sanity = 100;
-      health = 100;
+      sanity = 70;
+      health = 90;
       dayCount = 1;
       updateMetrics();
 
@@ -1327,12 +1341,13 @@
     }
 
     function chooseStrategy(choice) {
-      dayCount = 14;
       if (choice === 'quiet') {
+        advanceToDay(14, false);
         sanity = Math.min(100, sanity + 5);
         updateMetrics();
         switchScreen('screen-5b', 'screen-5c-quiet', 'theme-dark');
       } else {
+        advanceToDay(14);
         health = Math.max(0, health - 15);
         updateMetrics();
         switchScreen('screen-5b', 'screen-5c-scream', 'theme-dark');
@@ -1340,7 +1355,7 @@
     }
 
     function proceedToFoodScene(fromScreenId) {
-      dayCount = 21;
+      advanceToDay(21);
       updateMetrics();
       switchScreen(fromScreenId, 'screen-5d-food', 'theme-dark');
     }
@@ -1356,7 +1371,7 @@
     }
 
     function proceedToInterrogation(fromScreenId) {
-      dayCount = 45;
+      advanceToDay(45);
       updateMetrics();
       setBlueprintActive('node-interrogation');
       switchScreen(fromScreenId, 'screen-6a', 'theme-interrogation');
@@ -1365,7 +1380,7 @@
     function chooseInterrogation(choice) {
       if (choice === 'sign') { 
         sanity = Math.max(0, sanity - 20);
-        dayCount = 180;
+        advanceToDay(180);
         updateMetrics();
         setBlueprintActive('node-court');
         switchScreen('screen-6b', 'screen-7a', 'theme-court');
@@ -1383,7 +1398,7 @@
         health = Math.max(0, health - 25);
         sanity = Math.max(0, sanity - 15);
       }
-      dayCount = 250;
+      advanceToDay(250);
       updateMetrics();
       setBlueprintActive('node-prison');
       showPrisonRemand();
