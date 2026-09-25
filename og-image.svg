@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#030305"/>
+  <rect x="48" y="48" width="1104" height="534" rx="28" fill="#0a0c12" stroke="#dc2626" stroke-opacity="0.55" stroke-width="2"/>
+  <path d="M48 470 C260 390 390 530 600 445 S930 360 1152 445" fill="none" stroke="#dc2626" stroke-opacity="0.28" stroke-width="2"/>
+  <path d="M48 500 C260 420 390 560 600 475 S930 390 1152 475" fill="none" stroke="#38bdf8" stroke-opacity="0.18" stroke-width="2"/>
+  <text x="96" y="230" fill="#f3f4f6" font-family="Georgia, serif" font-size="72" font-weight="700">Aynaghar</text>
+  <text x="100" y="305" fill="#cbd5e1" font-family="Arial, sans-serif" font-size="32" letter-spacing="5">DAYS OF SILENCE</text>
+  <line x1="100" y1="350" x2="390" y2="350" stroke="#dc2626" stroke-width="4"/>
+  <text x="100" y="410" fill="#94a3b8" font-family="Arial, sans-serif" font-size="22">An interactive documentary experience</text>
+</svg>
