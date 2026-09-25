@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Aynaghar: Days of Silence (Interactive Simulator)</title>
+  <title>Aynaghar: Days of Silence</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     
@@ -1241,12 +1241,14 @@
     let pageSoundTimeout = null;
     let activePageId = null;
     let waterDropTimeout = null;
+    let waterDropsActive = false;
     let headphoneNoticeTimeout = null;
-    let humStarted = false;
-    let humActive = false;
+    let exhaustHumStarted = false;
+    let exhaustHumActive = false;
     const waterDropAudio = document.getElementById('audio-water-droplets');
     const airplaneAudio = document.getElementById('audio-airplane');
-    const humNodes = new Set();
+    const exhaustHumNodes = new Set();
+    const backgroundHumNodes = new Set();
 
     function initAudio() {
       if (!audioCtx) {
@@ -1283,12 +1285,6 @@
         clearTimeout(ambienceTimeout);
         ambienceTimeout = null;
       }
-      if (waterDropTimeout) {
-        clearTimeout(waterDropTimeout);
-        waterDropTimeout = null;
-      }
-      waterDropAudio.pause();
-      waterDropAudio.currentTime = 0;
       stopPageSounds();
       ambienceNodes.forEach(node => {
         try { node.stop(); } catch (e) {}
@@ -1299,17 +1295,37 @@
     }
 
     function stopPersistentHum() {
-      humNodes.forEach(node => {
+      exhaustHumNodes.forEach(node => {
         try { node.stop(); } catch (e) {}
         try { node.disconnect(); } catch (e) {}
       });
-      humNodes.clear();
-      humActive = false;
+      exhaustHumNodes.clear();
+      exhaustHumActive = false;
+    }
+
+    function stopBackgroundHum() {
+      backgroundHumNodes.forEach(node => {
+        try { node.stop(); } catch (e) {}
+        try { node.disconnect(); } catch (e) {}
+      });
+      backgroundHumNodes.clear();
+    }
+
+    function stopWaterDrops() {
+      if (waterDropTimeout) {
+        clearTimeout(waterDropTimeout);
+        waterDropTimeout = null;
+      }
+      waterDropAudio.pause();
+      waterDropAudio.currentTime = 0;
+      waterDropsActive = false;
     }
 
     function stopAllAudio() {
       stopAmbience();
       stopPersistentHum();
+      stopBackgroundHum();
+      stopWaterDrops();
     }
 
     function createNoiseBuffer(duration = 2) {
@@ -1320,14 +1336,14 @@
     }
 
     function startExhaustHum() {
-      if (humActive) return;
-      humStarted = true;
-      humActive = true;
-      const hum = trackAudioNode(audioCtx.createOscillator(), humNodes);
+      if (exhaustHumActive) return;
+      exhaustHumStarted = true;
+      exhaustHumActive = true;
+      const hum = trackAudioNode(audioCtx.createOscillator(), exhaustHumNodes);
       const humGain = audioCtx.createGain();
-      const rumble = trackAudioNode(audioCtx.createOscillator(), humNodes);
+      const rumble = trackAudioNode(audioCtx.createOscillator(), exhaustHumNodes);
       const rumbleGain = audioCtx.createGain();
-      const noise = trackAudioNode(audioCtx.createBufferSource(), humNodes);
+      const noise = trackAudioNode(audioCtx.createBufferSource(), exhaustHumNodes);
       const noiseFilter = audioCtx.createBiquadFilter();
       const noiseGain = audioCtx.createGain();
       hum.type = 'sine';
@@ -1347,6 +1363,20 @@
       hum.start();
       rumble.start();
       noise.start();
+    }
+
+    function startBackgroundHum() {
+      if (backgroundHumNodes.size > 0) return;
+      const source = trackAudioNode(audioCtx.createBufferSource(), backgroundHumNodes);
+      const filter = audioCtx.createBiquadFilter();
+      const gain = audioCtx.createGain();
+      source.buffer = createNoiseBuffer(3);
+      source.loop = true;
+      filter.type = 'lowpass';
+      filter.frequency.value = 700;
+      gain.gain.value = 0.008;
+      source.connect(filter).connect(gain).connect(audioCtx.destination);
+      source.start();
     }
 
     function playDistantAirplane() {
@@ -1376,25 +1406,21 @@
     }
 
     function scheduleWaterDrop() {
-      if (activeAmbience !== 'water' || !isAudioEnabled) return;
+      if (!waterDropsActive || !isAudioEnabled) return;
       waterDropAudio.volume = 0.18;
       waterDropAudio.currentTime = 0;
       waterDropAudio.play().catch(() => {});
-      waterDropTimeout = setTimeout(scheduleWaterDrop, 3000 + Math.random() * 6000);
+      waterDropTimeout = setTimeout(scheduleWaterDrop, 3000 + Math.random() * 22000);
+    }
+
+    function startWaterDrops() {
+      if (waterDropsActive) return;
+      waterDropsActive = true;
+      waterDropTimeout = setTimeout(scheduleWaterDrop, 3000 + Math.random() * 22000);
     }
 
     function startWaterAmbience() {
-      const source = trackAudioNode(audioCtx.createBufferSource());
-      const filter = audioCtx.createBiquadFilter();
-      const gain = audioCtx.createGain();
-      source.buffer = createNoiseBuffer(3);
-      source.loop = true;
-      filter.type = 'lowpass';
-      filter.frequency.value = 700;
-      gain.gain.value = 0.008;
-      source.connect(filter).connect(gain).connect(audioCtx.destination);
-      source.start();
-      waterDropTimeout = setTimeout(scheduleWaterDrop, 3000 + Math.random() * 6000);
+      startWaterDrops();
     }
 
     function setAmbience(screenId) {
@@ -1405,9 +1431,10 @@
       if (!isAudioEnabled || !nextAmbience) return;
       initAudio();
       activeAmbience = nextAmbience;
-      if (!humStarted) startExhaustHum();
-      if (nextAmbience === 'exhaust') startExhaustHum();
-      if (nextAmbience === 'water') startWaterAmbience();
+      if (nextAmbience === 'water') {
+        startBackgroundHum();
+        startWaterAmbience();
+      }
     }
 
     function startPageSounds(screenId) {
@@ -1436,7 +1463,12 @@
         const activeScreenId = activeScreen ? activeScreen.id : null;
         setAmbience(activeScreenId);
         startPageSounds(activeScreenId);
-        if (humStarted && activeScreenId !== 'screen-fatal') startExhaustHum();
+        if (activeScreenId && activeScreenId !== 'screen-1' && activeScreenId !== 'screen-fatal') {
+          initAudio();
+          startBackgroundHum();
+          startWaterDrops();
+        }
+        if (exhaustHumStarted && ['screen-3b', 'screen-4', 'screen-5', 'screen-5b', 'screen-5c-quiet', 'screen-5c-scream', 'screen-5d-food', 'screen-5d-food-eat', 'screen-5d-food-kindness', 'screen-6a', 'screen-6b', 'screen-7a'].includes(activeScreenId)) startExhaustHum();
       } else {
         stopAllAudio();
       }
@@ -1550,8 +1582,9 @@
     function switchScreen(fromId, toId, themeClass = null) {
       stopPageSounds();
       if (toId === 'screen-fatal') stopAllAudio();
+      if (toId === 'screen-7b') stopPersistentHum();
       setAmbience(toId);
-      if (toId === 'screen-7a' && isAudioEnabled) {
+      if (toId === 'screen-7a' && isAudioEnabled && exhaustHumStarted) {
         initAudio();
         startExhaustHum();
       }
