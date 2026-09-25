@@ -89,13 +89,27 @@
       gap: 10px;
     }
 
+    .audio-label {
+      color: #cbd5e1;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.7px;
+      text-transform: uppercase;
+    }
+
     .audio-toggle-btn {
-      background: rgba(30, 30, 45, 0.85);
+      width: 40px;
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(30, 30, 45, 0.65);
       border: 1px solid rgba(245, 158, 11, 0.5);
       color: #fbbf24;
-      font-size: 0.8rem;
-      padding: 7px 16px;
-      border-radius: 20px;
+      font-size: 0.62rem;
+      letter-spacing: 0.5px;
+      padding: 0;
+      border-radius: 6px;
       cursor: pointer;
       font-weight: 600;
       transition: all 0.25s ease;
@@ -106,6 +120,90 @@
       background: rgba(245, 158, 11, 0.25);
       border-color: #f59e0b;
       box-shadow: 0 0 16px rgba(245, 158, 11, 0.4);
+    }
+
+    .audio-toggle-btn:focus-visible {
+      outline: 2px solid #fbbf24;
+      outline-offset: 3px;
+    }
+
+    .headphone-overlay {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      z-index: 20;
+      width: min(360px, calc(100vw - 32px));
+      padding: 22px 24px;
+      transform: translate(-50%, -50%);
+      background: rgba(8, 10, 16, 0.68);
+      border: 1px solid rgba(251, 191, 36, 0.5);
+      border-radius: 12px;
+      box-shadow: 0 18px 60px rgba(0, 0, 0, 0.65);
+      color: #f8fafc;
+      text-align: center;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .headphone-overlay.visible {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      animation: headphoneFadeIn 0.9s ease both;
+    }
+
+    .headphone-overlay.closing {
+      opacity: 0;
+      visibility: visible;
+      pointer-events: none;
+      animation: headphoneFadeOut 0.9s ease both;
+    }
+
+    .headphone-overlay-text {
+      display: block;
+      color: #e5e7eb;
+      font-family: inherit;
+      font-size: 0.92rem;
+      font-weight: 400;
+      line-height: 1.5;
+    }
+
+    .headphone-overlay-emoji {
+      display: block;
+      margin-top: 12px;
+      font-size: 2.5rem;
+    }
+
+    .headphone-overlay-close {
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      width: 28px;
+      height: 28px;
+      border: 0;
+      background: transparent;
+      color: #94a3b8;
+      cursor: pointer;
+      font-size: 1.3rem;
+      line-height: 1;
+    }
+
+    .headphone-overlay-close:hover,
+    .headphone-overlay-close:focus-visible {
+      color: #fbbf24;
+    }
+
+    @keyframes headphoneFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes headphoneFadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
     }
 
     /* Architectural Blueprint Header Indicator */
@@ -573,16 +671,18 @@
 </head>
 <body class="theme-dark">
 
-  <audio id="audio-exhaust" src="" loop preload="auto"></audio>
-  <audio id="audio-airplane" src="" preload="auto"></audio>
-
   <!-- Dynamic Atmospheric Liquid Background Canvas -->
   <canvas id="bg-canvas"></canvas>
+  <audio id="audio-water-droplets" src="audio/water_droplets.mp3" preload="auto"></audio>
+  <audio id="audio-airplane" src="audio/airplane_distant.mp3" preload="auto"></audio>
 
   <div id="game-card">
     <header id="main-header" style="display: none;">
       <h1>Aynaghar: Days of Silence</h1>
-      
+      <div class="audio-controls">
+        <span class="audio-label">Audio</span>
+        <button id="audio-toggle" class="audio-toggle-btn" type="button" onclick="toggleAudio()" aria-label="Turn sound off" title="Turn sound off" aria-pressed="true">ON</button>
+      </div>
     </header>
 
     <!-- Architectural Blueprint Header Indicator -->
@@ -671,7 +771,7 @@
         </div>
       </div>
       <div class="button-group">
-        <button class="action-btn next-btn" onclick="playTapSound(); switchScreen('screen-1', 'screen-2', 'theme-dark')">
+        <button class="action-btn next-btn" onclick="playTapSound(); startSimulationFromIntro()">
           <span>Enter Simulation Briefing →</span>
         </button>
       </div>
@@ -967,7 +1067,8 @@
       <div class="scene-viewport" style="border-color: #ef4444; background: rgba(30, 10, 10, 0.95);">
         <div class="scene-title" style="color: #f87171; text-align: center;">STAGE 3 OUTCOME: GOLF OPERATION (EXTRAJUDICIAL EXECUTION)</div>
         <p class="scene-text" style="font-size: 1.05rem; color: #fef2f2; line-height: 1.7;">
-          You refused to sign the forced confession. Late that night, you were re-blindfolded, driven to an embankment, and extrajudicially executed in a staged "crossfire" gunfight.
+          You refused to sign the forced confession. Late that night, you were re-blindfolded, driven to an embankment, and extrajudicially executed in a staged "crossfire" gunfight. 
+          <br><br><i>Please restart the simulator and choose different options for the epilogue.</i>
         </p>
         <div class="survivor-quote" style="border-left-color: #ef4444; color: #fca5a5; background: rgba(239, 68, 68, 0.15);">
           "If you say this, you will get out. If you refuse, we will put you in crossfire here and you will die." — Captor Threat (Enforced Disappearance Commission Final Report Vol. 1, p. 118)
@@ -1065,6 +1166,12 @@
 
   </div>
 
+  <div id="headphone-overlay" class="headphone-overlay" role="dialog" aria-label="Headphone recommendation" aria-hidden="true">
+    <button class="headphone-overlay-close" type="button" onclick="hideHeadphoneNotice()" aria-label="Close headphone recommendation">&times;</button>
+    <span class="headphone-overlay-text">Headphones recommended</span>
+    <span class="headphone-overlay-emoji" aria-hidden="true">&#127911;</span>
+  </div>
+
   <script>
     /* 1. ATMOSPHERIC LIQUID BACKGROUND CANVAS ANIMATION */
     const canvas = document.getElementById('bg-canvas');
@@ -1127,6 +1234,19 @@
     /* 2. WEB AUDIO SYNTHESIZER ENGINE */
     let audioCtx = null;
     let isAudioEnabled = true;
+    let activeAmbience = null;
+    let ambienceTimeout = null;
+    const ambienceNodes = new Set();
+    const pageSoundNodes = new Set();
+    let pageSoundTimeout = null;
+    let activePageId = null;
+    let waterDropTimeout = null;
+    let headphoneNoticeTimeout = null;
+    let humStarted = false;
+    let humActive = false;
+    const waterDropAudio = document.getElementById('audio-water-droplets');
+    const airplaneAudio = document.getElementById('audio-airplane');
+    const humNodes = new Set();
 
     function initAudio() {
       if (!audioCtx) {
@@ -1137,25 +1257,243 @@
       }
     }
 
+    function trackAudioNode(node, nodeSet = ambienceNodes) {
+      nodeSet.add(node);
+      node.onended = () => nodeSet.delete(node);
+      return node;
+    }
+
+    function stopPageSounds() {
+      activePageId = null;
+      if (pageSoundTimeout) {
+        clearTimeout(pageSoundTimeout);
+        pageSoundTimeout = null;
+      }
+      airplaneAudio.pause();
+      airplaneAudio.currentTime = 0;
+      pageSoundNodes.forEach(node => {
+        try { node.stop(); } catch (e) {}
+        try { node.disconnect(); } catch (e) {}
+      });
+      pageSoundNodes.clear();
+    }
+
+    function stopAmbience() {
+      if (ambienceTimeout) {
+        clearTimeout(ambienceTimeout);
+        ambienceTimeout = null;
+      }
+      if (waterDropTimeout) {
+        clearTimeout(waterDropTimeout);
+        waterDropTimeout = null;
+      }
+      waterDropAudio.pause();
+      waterDropAudio.currentTime = 0;
+      stopPageSounds();
+      ambienceNodes.forEach(node => {
+        try { node.stop(); } catch (e) {}
+        try { node.disconnect(); } catch (e) {}
+      });
+      ambienceNodes.clear();
+      activeAmbience = null;
+    }
+
+    function stopPersistentHum() {
+      humNodes.forEach(node => {
+        try { node.stop(); } catch (e) {}
+        try { node.disconnect(); } catch (e) {}
+      });
+      humNodes.clear();
+      humActive = false;
+    }
+
+    function stopAllAudio() {
+      stopAmbience();
+      stopPersistentHum();
+    }
+
+    function createNoiseBuffer(duration = 2) {
+      const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate * duration, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+      return buffer;
+    }
+
+    function startExhaustHum() {
+      if (humActive) return;
+      humStarted = true;
+      humActive = true;
+      const hum = trackAudioNode(audioCtx.createOscillator(), humNodes);
+      const humGain = audioCtx.createGain();
+      const rumble = trackAudioNode(audioCtx.createOscillator(), humNodes);
+      const rumbleGain = audioCtx.createGain();
+      const noise = trackAudioNode(audioCtx.createBufferSource(), humNodes);
+      const noiseFilter = audioCtx.createBiquadFilter();
+      const noiseGain = audioCtx.createGain();
+      hum.type = 'sine';
+      hum.frequency.value = 92;
+      humGain.gain.value = 0.018;
+      rumble.type = 'triangle';
+      rumble.frequency.value = 46;
+      rumbleGain.gain.value = 0.012;
+      noise.buffer = createNoiseBuffer(2);
+      noise.loop = true;
+      noiseFilter.type = 'lowpass';
+      noiseFilter.frequency.value = 420;
+      noiseGain.gain.value = 0.006;
+      hum.connect(humGain).connect(audioCtx.destination);
+      rumble.connect(rumbleGain).connect(audioCtx.destination);
+      noise.connect(noiseFilter).connect(noiseGain).connect(audioCtx.destination);
+      hum.start();
+      rumble.start();
+      noise.start();
+    }
+
+    function playDistantAirplane() {
+      if (!isAudioEnabled) return;
+      airplaneAudio.volume = 0.16;
+      airplaneAudio.currentTime = 0;
+      airplaneAudio.play().catch(() => {});
+    }
+
+    function playTypingSound() {
+      if (!isAudioEnabled) return;
+      initAudio();
+      const now = audioCtx.currentTime;
+      const noise = trackAudioNode(audioCtx.createBufferSource(), pageSoundNodes);
+      const filter = audioCtx.createBiquadFilter();
+      const gain = audioCtx.createGain();
+      noise.buffer = createNoiseBuffer(0.025);
+      filter.type = 'bandpass';
+      filter.frequency.value = 2600 + Math.random() * 700;
+      filter.Q.value = 1.2;
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.018, now + 0.002);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.022);
+      noise.connect(filter).connect(gain).connect(audioCtx.destination);
+      noise.start(now);
+      noise.stop(now + 0.025);
+    }
+
+    function scheduleWaterDrop() {
+      if (activeAmbience !== 'water' || !isAudioEnabled) return;
+      waterDropAudio.volume = 0.18;
+      waterDropAudio.currentTime = 0;
+      waterDropAudio.play().catch(() => {});
+      waterDropTimeout = setTimeout(scheduleWaterDrop, 3000 + Math.random() * 6000);
+    }
+
+    function startWaterAmbience() {
+      const source = trackAudioNode(audioCtx.createBufferSource());
+      const filter = audioCtx.createBiquadFilter();
+      const gain = audioCtx.createGain();
+      source.buffer = createNoiseBuffer(3);
+      source.loop = true;
+      filter.type = 'lowpass';
+      filter.frequency.value = 700;
+      gain.gain.value = 0.008;
+      source.connect(filter).connect(gain).connect(audioCtx.destination);
+      source.start();
+      waterDropTimeout = setTimeout(scheduleWaterDrop, 3000 + Math.random() * 6000);
+    }
+
+    function setAmbience(screenId) {
+      const waterScreens = ['screen-2', 'screen-3', 'screen-3b', 'screen-4', 'screen-5', 'screen-5b', 'screen-5c-quiet', 'screen-5c-scream', 'screen-5d-food', 'screen-5d-food-eat', 'screen-5d-food-kindness', 'screen-6a', 'screen-6b'];
+      const nextAmbience = waterScreens.includes(screenId) ? 'water' : null;
+      if (nextAmbience === activeAmbience) return;
+      stopAmbience();
+      if (!isAudioEnabled || !nextAmbience) return;
+      initAudio();
+      activeAmbience = nextAmbience;
+      if (!humStarted) startExhaustHum();
+      if (nextAmbience === 'exhaust') startExhaustHum();
+      if (nextAmbience === 'water') startWaterAmbience();
+    }
+
+    function startPageSounds(screenId) {
+      if (!isAudioEnabled) return;
+      activePageId = screenId;
+      if (screenId === 'screen-5b') {
+        scheduleDistantSounds();
+      }
+    }
+
+    function scheduleDistantSounds() {
+      if (!isAudioEnabled || activePageId !== 'screen-5b') return;
+      playDistantAirplane();
+      pageSoundTimeout = setTimeout(scheduleDistantSounds, 3000 + Math.random() * 6000);
+    }
+
+    function toggleAudio() {
+      isAudioEnabled = !isAudioEnabled;
+      const button = document.getElementById('audio-toggle');
+      button.innerText = isAudioEnabled ? 'ON' : 'OFF';
+      button.setAttribute('aria-label', isAudioEnabled ? 'Turn sound off' : 'Turn sound on');
+      button.setAttribute('title', isAudioEnabled ? 'Turn sound off' : 'Turn sound on');
+      button.setAttribute('aria-pressed', String(isAudioEnabled));
+      if (isAudioEnabled) {
+        const activeScreen = document.querySelector('.screen.active');
+        const activeScreenId = activeScreen ? activeScreen.id : null;
+        setAmbience(activeScreenId);
+        startPageSounds(activeScreenId);
+        if (humStarted && activeScreenId !== 'screen-fatal') startExhaustHum();
+      } else {
+        stopAllAudio();
+      }
+    }
+
+    function hideHeadphoneNotice() {
+      const overlay = document.getElementById('headphone-overlay');
+      if (headphoneNoticeTimeout) {
+        clearTimeout(headphoneNoticeTimeout);
+        headphoneNoticeTimeout = null;
+      }
+      overlay.classList.remove('visible');
+      overlay.classList.add('closing');
+      setTimeout(() => {
+        overlay.classList.remove('closing');
+        overlay.setAttribute('aria-hidden', 'true');
+      }, 900);
+    }
+
+    function showHeadphoneNotice() {
+      const overlay = document.getElementById('headphone-overlay');
+      overlay.classList.remove('closing');
+      overlay.classList.add('visible');
+      overlay.setAttribute('aria-hidden', 'false');
+      headphoneNoticeTimeout = setTimeout(hideHeadphoneNotice, 10000);
+    }
+
 
 
     function playTapSound() {
-      if (!isAudioEnabled) return;
+      const activeScreen = document.querySelector('.screen.active');
+      if (!isAudioEnabled || activeScreen?.id === 'screen-fatal') return;
       initAudio();
       try {
-        const osc = audioCtx.createOscillator();
+        const noise = audioCtx.createBufferSource();
+        const filter = audioCtx.createBiquadFilter();
         const gain = audioCtx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(110, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(35, audioCtx.currentTime + 0.015);
-        gain.gain.setValueAtTime(0.025, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.015);
-        osc.connect(gain);
+        const now = audioCtx.currentTime;
+        noise.buffer = createNoiseBuffer(0.018);
+        filter.type = 'bandpass';
+        filter.frequency.value = 2300 + Math.random() * 500;
+        filter.Q.value = 1.1;
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(0.012, now + 0.002);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.016);
+        noise.connect(filter).connect(gain);
         gain.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.015);
+        noise.start(now);
+        noise.stop(now + 0.018);
       } catch(e) {}
     }
+
+    document.addEventListener('click', event => {
+      const button = event.target.closest('button');
+      if (!button || (button.getAttribute('onclick') || '').includes('playTapSound')) return;
+      playTapSound();
+    });
 
     /* 3. GAME STATE & NAVIGATION */
     const DAILY_METRIC_RETENTION = 0.9975;
@@ -1210,6 +1548,14 @@
     }
 
     function switchScreen(fromId, toId, themeClass = null) {
+      stopPageSounds();
+      if (toId === 'screen-fatal') stopAllAudio();
+      setAmbience(toId);
+      if (toId === 'screen-7a' && isAudioEnabled) {
+        initAudio();
+        startExhaustHum();
+      }
+      startPageSounds(toId);
       if (themeClass) {
         document.body.className = themeClass;
         document.getElementById('game-card').className = themeClass;
@@ -1234,6 +1580,7 @@
     function startSimulationFromIntro() {
       document.getElementById('main-header').style.display = 'flex';
       switchScreen('screen-1', 'screen-2', 'theme-dark');
+      setTimeout(showHeadphoneNotice, 450);
     }
 
     /* TYPEWRITER SCENES */
@@ -1279,7 +1626,7 @@
 
         for (let cIdx = 0; cIdx < text.length; cIdx++) {
           target.innerText += text.charAt(cIdx);
-          if (cIdx % 4 === 0) playTapSound();
+          if (cIdx % 4 === 0) playTypingSound();
           await new Promise(r => setTimeout(r, 30));
           if (typingState.finishParagraphRequested) {
             target.innerText = paragraphs.slice(0, pIdx + 1).join('\n\n');
@@ -1323,9 +1670,13 @@
         cursor.className = "cursor-solid";
         typingState.isTyping = true;
 
+        if (pIdx === 1) {
+          startExhaustHum();
+        }
+
         for (let cIdx = 0; cIdx < text.length; cIdx++) {
           target.innerText += text.charAt(cIdx);
-          if (cIdx % 4 === 0) playTapSound();
+          if (cIdx % 4 === 0) playTypingSound();
           await new Promise(r => setTimeout(r, 30));
           if (typingState.finishParagraphRequested) {
             target.innerText = paragraphs.slice(0, pIdx + 1).join('\n\n');
