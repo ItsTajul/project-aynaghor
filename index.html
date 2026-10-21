@@ -107,32 +107,15 @@
       text-transform: uppercase;
     }
 
-    .audio-toggle-btn {
-      width: 40px;
-      height: 28px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(30, 30, 45, 0.65);
-      border: 1px solid rgba(245, 158, 11, 0.5);
-      color: #fbbf24;
-      font-size: 0.62rem;
-      letter-spacing: 0.5px;
-      padding: 0;
-      border-radius: 6px;
+    .audio-toggle-checkbox {
+      width: 18px;
+      height: 18px;
+      margin: 0;
+      accent-color: #fbbf24;
       cursor: pointer;
-      font-weight: 600;
-      transition: all 0.25s ease;
-      backdrop-filter: blur(6px);
     }
 
-    .audio-toggle-btn:hover {
-      background: rgba(245, 158, 11, 0.25);
-      border-color: #f59e0b;
-      box-shadow: 0 0 16px rgba(245, 158, 11, 0.4);
-    }
-
-    .audio-toggle-btn:focus-visible {
+    .audio-toggle-checkbox:focus-visible {
       outline: 2px solid #fbbf24;
       outline-offset: 3px;
     }
@@ -179,6 +162,24 @@
       font-size: 0.92rem;
       font-weight: 400;
       line-height: 1.5;
+    }
+
+    .headphone-overlay-audio {
+      justify-content: center;
+      margin-top: 16px;
+    }
+
+    .headphone-overlay-audio .audio-toggle-checkbox {
+      width: 20px;
+      height: 20px;
+    }
+
+    .headphone-overlay-hint {
+      display: block;
+      margin-top: 10px;
+      color: #94a3b8;
+      font-size: 0.75rem;
+      line-height: 1.45;
     }
 
     .headphone-overlay-emoji {
@@ -641,6 +642,27 @@
       border-color: #cbd5e1;
     }
 
+    .action-btn.intro-start-btn {
+      min-height: 58px;
+      background: #0b5368;
+      border-color: #38bdf8;
+      color: #ecfeff;
+      font-weight: 800;
+      box-shadow: 0 8px 22px rgba(8, 145, 178, 0.22);
+    }
+
+    .action-btn.intro-start-btn:hover:not(:disabled) {
+      background: #0e7490;
+      border-color: #7dd3fc;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 26px rgba(8, 145, 178, 0.34);
+    }
+
+    .action-btn.intro-start-btn:focus-visible {
+      outline: 2px solid #a5f3fc;
+      outline-offset: 3px;
+    }
+
     .action-btn:disabled {
       opacity: 0.3;
       cursor: not-allowed;
@@ -742,8 +764,8 @@
     <header id="main-header" style="display: none;">
       <h1>Aynaghar: Days of Silence</h1>
       <div class="audio-controls">
-        <span class="audio-label">Audio</span>
-        <button id="audio-toggle" class="audio-toggle-btn" type="button" onclick="toggleAudio()" aria-label="Turn sound off" title="Turn sound off" aria-pressed="true">ON</button>
+        <label class="audio-label" for="audio-toggle">Audio</label>
+        <input id="audio-toggle" class="audio-toggle-checkbox" type="checkbox" onchange="toggleAudio(this.checked)">
       </div>
     </header>
 
@@ -810,7 +832,7 @@
         </figure>
         <p class="scene-text" style="font-size: 1.02rem; color: #f3f4f6; line-height: 1.7; max-width: 800px; margin: 0 auto 20px auto;">
           Between January 2009 and August 2024, state security forces in Bangladesh systematically abducted thousands of citizens into a network of secret black sites known as <b>'Aynaghar'</b> <i>(The House of Mirror)</i>.
-          <br><br>This interactive story reconstructs the documented conditions inside secret custody and the enduring legal struggles families face outside.
+          <br><br>This interactive story attempts to reconstruct the documented conditions inside secret custody and the enduring legal struggles families face outside.
 
         </p>
 
@@ -838,7 +860,7 @@
         </div>
       </div>
       <div class="button-group">
-        <button class="action-btn next-btn" onclick="playTapSound(); startSimulationFromIntro()">
+        <button class="action-btn next-btn intro-start-btn" onclick="playTapSound(); startSimulationFromIntro()">
           <span>Enter Simulation Briefing →</span>
         </button>
       </div>
@@ -1238,6 +1260,11 @@
     <button class="headphone-overlay-close" type="button" onclick="hideHeadphoneNotice()" aria-label="Close headphone recommendation">&times;</button>
     <span class="headphone-overlay-text">Headphones recommended</span>
     <span class="headphone-overlay-emoji" aria-hidden="true">&#127911;</span>
+    <div class="audio-controls headphone-overlay-audio">
+      <label class="audio-label" for="headphone-audio-toggle">Audio:</label>
+      <input id="headphone-audio-toggle" class="audio-toggle-checkbox" type="checkbox" onchange="toggleAudio(this.checked)">
+    </div>
+    <span class="headphone-overlay-hint">Please click the white box to turn audio on.</span>
   </div>
 
   <script>
@@ -1301,7 +1328,7 @@
 
     /* 2. WEB AUDIO SYNTHESIZER ENGINE */
     let audioCtx = null;
-    let isAudioEnabled = true;
+    let isAudioEnabled = false;
     let activeAmbience = null;
     let ambienceTimeout = null;
     const ambienceNodes = new Set();
@@ -1310,7 +1337,6 @@
     let activePageId = null;
     let waterDropTimeout = null;
     let waterDropsActive = false;
-    let headphoneNoticeTimeout = null;
     let exhaustHumStarted = false;
     let exhaustHumActive = false;
     const waterDropAudio = document.getElementById('audio-water-droplets');
@@ -1519,13 +1545,14 @@
       pageSoundTimeout = setTimeout(scheduleDistantSounds, 3000 + Math.random() * 6000);
     }
 
-    function toggleAudio() {
-      isAudioEnabled = !isAudioEnabled;
-      const button = document.getElementById('audio-toggle');
-      button.innerText = isAudioEnabled ? 'ON' : 'OFF';
-      button.setAttribute('aria-label', isAudioEnabled ? 'Turn sound off' : 'Turn sound on');
-      button.setAttribute('title', isAudioEnabled ? 'Turn sound off' : 'Turn sound on');
-      button.setAttribute('aria-pressed', String(isAudioEnabled));
+    function toggleAudio(shouldEnable = !isAudioEnabled) {
+      isAudioEnabled = shouldEnable;
+      document.querySelectorAll('.audio-toggle-checkbox').forEach(checkbox => {
+        checkbox.checked = isAudioEnabled;
+      });
+      document.querySelector('.headphone-overlay-hint').textContent = isAudioEnabled
+        ? 'Audio is on.'
+        : 'Please click the white box to turn audio on.';
       if (isAudioEnabled) {
         const activeScreen = document.querySelector('.screen.active');
         const activeScreenId = activeScreen ? activeScreen.id : null;
@@ -1544,10 +1571,6 @@
 
     function hideHeadphoneNotice() {
       const overlay = document.getElementById('headphone-overlay');
-      if (headphoneNoticeTimeout) {
-        clearTimeout(headphoneNoticeTimeout);
-        headphoneNoticeTimeout = null;
-      }
       overlay.classList.remove('visible');
       overlay.classList.add('closing');
       setTimeout(() => {
@@ -1561,7 +1584,6 @@
       overlay.classList.remove('closing');
       overlay.classList.add('visible');
       overlay.setAttribute('aria-hidden', 'false');
-      headphoneNoticeTimeout = setTimeout(hideHeadphoneNotice, 10000);
     }
 
     setTimeout(showHeadphoneNotice, 450);
