@@ -623,6 +623,27 @@
       transform: none !important;
     }
 
+    .beta-note {
+      margin-top: 18px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      color: #94a3b8;
+      font-size: 0.72rem;
+      line-height: 1.5;
+      text-align: center;
+    }
+
+    .beta-note a {
+      color: #7dd3fc;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    .beta-note a:hover,
+    .beta-note a:focus-visible {
+      color: #e0f2fe;
+    }
+
     @media (max-width: 600px) {
       html, body {
         height: auto;
@@ -1173,6 +1194,10 @@
         </button>
       </div>
     </div>
+
+    <footer class="beta-note">
+      Public beta · <a href="https://facebook.com/ItsTajul" target="_blank" rel="noopener noreferrer" aria-label="Share feedback on Facebook (opens in a new tab)">Share feedback</a>
+    </footer>
 
   </div>
 
