@@ -358,6 +358,32 @@
 
     .scene-text:last-child { margin-bottom: 0; }
 
+    .intro-collage {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      max-width: 780px;
+      margin: 16px auto;
+    }
+
+    .intro-collage img {
+      display: block;
+      width: 100%;
+      height: clamp(64px, 20vw, 150px);
+      aspect-ratio: 3 / 2;
+      object-fit: cover;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 6px;
+    }
+
+    .report-attribution {
+      margin: 6px 0 0;
+      color: #94a3b8;
+      font-size: 0.68rem;
+      line-height: 1.4;
+      text-align: center;
+    }
+
     .typewriter-text { 
       font-size: 1.05rem; 
       line-height: 1.8; 
@@ -672,6 +698,11 @@
         padding: 24px 14px !important;
       }
 
+      .intro-collage {
+        gap: 5px;
+        margin: 14px auto;
+      }
+
       .stat-chips-grid,
       .role-card-grid,
       .dual-perspective-grid {
@@ -772,6 +803,11 @@
           An Interactive Simulator by Md Tajul Islam & Kaniz Fatema
         </p>
 
+        <figure class="intro-collage" aria-label="Photographs of detention spaces documented in the Commission report">
+          <img src="assets/report-illustrations/custody-corridor.jpg" alt="A long corridor inside a documented detention site" width="1400" height="1052" fetchpriority="high">
+          <img src="assets/report-illustrations/solitary-cell.jpg" alt="A narrow, empty detention cell" width="630" height="1400" fetchpriority="high">
+          <img src="assets/report-illustrations/barred-cell.jpg" alt="Barred cell doors in a detention facility" width="1400" height="938" fetchpriority="high">
+        </figure>
         <p class="scene-text" style="font-size: 1.02rem; color: #f3f4f6; line-height: 1.7; max-width: 800px; margin: 0 auto 20px auto;">
           Between January 2009 and August 2024, state security forces in Bangladesh systematically abducted thousands of citizens into a network of secret black sites known as <b>'Aynaghar'</b> <i>(The House of Mirror)</i>.
           <br><br>This interactive story reconstructs the documented conditions inside secret custody and the enduring legal struggles families face outside.
@@ -876,9 +912,6 @@
         <p class="scene-text" id="cell-prompt">
           <strong>Inside the Cell.</strong> Your blindfold is loosened inside the locked room, but your hands remain cuffed behind your back to an iron bed. The space around you is pitch black.
         </p>
-
-        <!-- Cell Vector Illustration Box -->
-        
 
         <div id="alert-box" class="alert-box"></div>
       </div>
@@ -1451,7 +1484,7 @@
     function startWaterDrops() {
       if (waterDropsActive) return;
       waterDropsActive = true;
-      waterDropTimeout = setTimeout(scheduleWaterDrop, 3000 + Math.random() * 22000);
+      waterDropTimeout = setTimeout(scheduleWaterDrop, 1500 + Math.random() * 2500);
     }
 
     function startWaterAmbience() {
@@ -1459,7 +1492,7 @@
     }
 
     function setAmbience(screenId) {
-      const waterScreens = ['screen-2', 'screen-3', 'screen-3b', 'screen-4', 'screen-5', 'screen-5b', 'screen-5c-quiet', 'screen-5c-scream', 'screen-5d-food', 'screen-5d-food-eat', 'screen-5d-food-kindness', 'screen-6a', 'screen-6b'];
+      const waterScreens = ['screen-1', 'screen-2', 'screen-3', 'screen-3b', 'screen-4', 'screen-5', 'screen-5b', 'screen-5c-quiet', 'screen-5c-scream', 'screen-5d-food', 'screen-5d-food-eat', 'screen-5d-food-kindness', 'screen-6a', 'screen-6b'];
       const nextAmbience = waterScreens.includes(screenId) ? 'water' : null;
       if (nextAmbience === activeAmbience) return;
       stopAmbience();
@@ -1530,6 +1563,8 @@
       overlay.setAttribute('aria-hidden', 'false');
       headphoneNoticeTimeout = setTimeout(hideHeadphoneNotice, 10000);
     }
+
+    setTimeout(showHeadphoneNotice, 450);
 
 
 
@@ -1647,8 +1682,8 @@
 
     function startSimulationFromIntro() {
       document.getElementById('main-header').style.display = 'flex';
+      setAmbience('screen-1');
       switchScreen('screen-1', 'screen-2', 'theme-dark');
-      setTimeout(showHeadphoneNotice, 450);
     }
 
     /* TYPEWRITER SCENES */
